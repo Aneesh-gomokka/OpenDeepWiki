@@ -28,6 +28,16 @@ public sealed class DocumentStructureGenerationStep(ILogger<DocumentStructureGen
 
             var documentCatalogs = new List<DocumentCatalog>();
 
+            // Check if result or result.items is null to prevent NullReferenceException
+            if (result?.items == null || result.items.Count == 0)
+            {
+                Logger.LogWarning("Catalogue generation returned null or empty items for {GitPath}, skipping document structure generation",
+                    context.Document.GitPath);
+                context.DocumentCatalogs = documentCatalogs;
+                context.SetStepResult(StepName, documentCatalogs);
+                return context;
+            }
+
             // 递归处理目录层次结构
             DocumentsHelper.ProcessCatalogueItems(
                 result.items,

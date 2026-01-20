@@ -124,11 +124,24 @@ public partial class WarehouseProcessingTask(IServiceProvider service, ILogger<W
                     }
                 }
             }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                // Graceful shutdown - not an error
+                logger.LogInformation("仓库处理任务正在关闭");
+                break;
+            }
             catch (Exception exception)
             {
                 logger.LogError(exception, "处理仓库失败");
 
-                await Task.Delay(1000 * 60, stoppingToken);
+                try
+                {
+                    await Task.Delay(1000 * 60, stoppingToken);
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    break;
+                }
             }
         }
     }

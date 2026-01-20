@@ -46,12 +46,25 @@ public class StatisticsBackgroundService : BackgroundService
                 // 执行统计任务
                 await ExecuteStatisticsTask();
             }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                // Graceful shutdown - not an error
+                _logger.LogInformation("统计后台服务正在关闭");
+                break;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "统计后台服务发生错误");
-                
+
                 // 发生错误时等待1小时后重试
-                await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
+                try
+                {
+                    await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    break;
+                }
             }
         }
 
